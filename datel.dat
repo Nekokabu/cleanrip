@@ -160,6 +160,7 @@
 		<skip start="01000000" stop="4FFFFFFF"/>
 		<skip start="50100000" stop="570FFFFF"/>
 	</game>
+<!--
 	<game name="Datel MAX Memory Powersaves Volume 1">
 		<category>Applications</category>
 		<description>Datel MAX Memory Powersaves Volume 1</description>
@@ -168,6 +169,7 @@
 		<skip start="01000000" stop="4FFFFFFF"/>
 		<skip start="500D8000" stop="570FFFFF"/>
 	</game>
+-->
 	<game name="Unknown Datel default">
 		<category>Applications</category>
 		<description>Unknown Datel default</description>
