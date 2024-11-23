@@ -160,16 +160,16 @@
 		<skip start="01000000" stop="4FFFFFFF"/>
 		<skip start="50100000" stop="570FFFFF"/>
 	</game>
-<!--
 	<game name="Datel MAX Memory Powersaves Volume 1">
 		<category>Applications</category>
 		<description>Datel MAX Memory Powersaves Volume 1</description>
 		<rom name="Datel MAX Memory Powersaves Volume 1.iso" size="1459978240" crc="10526099" md5="92409857c8da29f9c77b485ce7ea29ca" sha1="d5c5355f921937c583cfe02b9cadd8fc18e9913a"/>
 		<skipcrc crc100000="25D6B24C" skipfill="00"/>
-		<skip start="01000000" stop="4FFFFFFF"/>
+		<skip start="01EF8000" stop="088FFFFF"/>
+		<skip start="08F00000" stop="090FFFFF"/>
+		<skip start="09500000" stop="4FFFFFFF"/>
 		<skip start="500D8000" stop="570FFFFF"/>
 	</game>
--->
 	<game name="Unknown Datel default">
 		<category>Applications</category>
 		<description>Unknown Datel default</description>
