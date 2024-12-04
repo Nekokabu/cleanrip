@@ -77,11 +77,18 @@
 	</game>
 	<game name="Datel Freeloader (v1.06B) (Japan)">
 		<category>Applications</category>
-		<description>Datel Freeloader (Japan)</description>
-		<rom name="Datel Freeloader (Japan).iso" size="1459978240" crc="9cb4c020" md5="c8440aa82a0f4305db814a85c890a69d" sha1="4cebfed36ea6f52588c716634ac4c4c020795a4a"/>
-		<skipcrc crc100000="535e4c28" skipfill="55"/>
+		<description>Datel Freeloader (v1.06B) (Japan)</description>
+		<rom name="Datel Freeloader (v1.06B) (Japan).iso" size="1459978240" crc="9cb4c020" md5="c8440aa82a0f4305db814a85c890a69d" sha1="4cebfed36ea6f52588c716634ac4c4c020795a4a"/>
+		<skipcrc crc100000="535E4C28" skipfill="55"/>
 		<skip start="01F00000" stop="4FFFFFFF"/>
 		<skip start="50100000" stop="570FFFFF"/>
+	</game>
+	<game name="Datel Freeloader (USA)">
+		<category>Applications</category>
+		<description>Datel Freeloader (USA)</description>
+		<rom name="Datel Freeloader (USA).iso" size="1459978240" crc="d78d4257" md5="32a1e0919aadb9e814d07177428ceb53" sha1="290945962e429ed9da89ca8506d006a913495fec"/>
+		<skipcrc crc100000="4BBAECC9" skipfill="55"/>
+		<skip start="01F00000" stop="570FFFFF"/>
 	</game>
 	<game name="Datel SD Media Launcher (USA)">
 		<category>Applications</category>
