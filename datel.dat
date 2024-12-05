@@ -182,6 +182,14 @@
 		<skip start="0B500000" stop="4FFFFFFF"/>
 		<skip start="50100000" stop="570FFFFF"/>
 	</game>
+	<game name="Datel CD avec les Codes Action Replay Exclusivement pour le Jeu The Legend of Zelda The Wind Waker">
+		<category>Applications</category>
+		<description>Datel CD avec les Codes Action Replay Exclusivement pour le Jeu The Legend of Zelda The Wind Waker</description>
+		<rom name="Datel CD avec les Codes Action Replay Exclusivement pour le Jeu The Legend of Zelda The Wind Waker.iso" size="1459978240" crc="e584a9f1" md5="2881bce3b401482fc548723730583985" sha1="041a57690305fad36334b3c70a2f44edaed84e8b"/>
+		<skipcrc crc100000="34D32A42" skipfill="55"/>
+		<skip start="01F00000" stop="4FFFFFFF"/>
+		<skip start="50300000" stop="570FFFFF"/>
+	</game>
 	<game name="Unknown Datel default">
 		<category>Applications</category>
 		<description>Unknown Datel default</description>
