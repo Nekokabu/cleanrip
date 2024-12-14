@@ -51,6 +51,8 @@ static mxml_node_t *wiiXML = NULL;
 static char gameName[256];
 
 void verify_init(char *mountPath) {
+	print_gecko("[verify_init()]\r\n");
+
 	if (verify_initialized) {
 		return;
 	}
@@ -76,6 +78,8 @@ void verify_init(char *mountPath) {
 	FILE *fp = NULL;
 	// Check for the Gamecube Redump.org DAT and read it
 	sprintf(txtbuffer, "%sgc.dat", mountPath);
+	print_gecko("Open gc.dat [%s]\r\n", txtbuffer);
+
 	fp = fopen(txtbuffer, "rb");
 	if (fp) {
 		fseek(fp, 0, SEEK_END);
@@ -98,6 +102,8 @@ void verify_init(char *mountPath) {
 #ifdef HW_RVL
 	// Check for the Wii Redump.org DAT and read it
 	sprintf(txtbuffer, "%swii.dat", mountPath);
+	print_gecko("Open wii.dat [%s]\r\n", txtbuffer);
+
 	fp = fopen(txtbuffer, "rb");
 	if (fp) {
 		fseek(fp, 0L, SEEK_END);
@@ -229,7 +235,7 @@ void verify_download(char *mountPath) {
 
 int verify_findMD5Sum(const char * md5orig, int disc_type) {
 
-	print_gecko("Looking for MD5 [%s]\r\n", md5orig);
+	print_gecko("[verify_findMD5Sum]\r\nLooking for MD5 [%s]\r\n", md5orig);
 
 #ifdef HW_RVL
 	mxml_node_t *pointer = (disc_type == IS_NGC_DISC)  ? ngcXML : wiiXML;
@@ -243,32 +249,41 @@ int verify_findMD5Sum(const char * md5orig, int disc_type) {
 
 	// open the <datafile>
 	mxml_node_t *item = mxmlFindElement(pointer, pointer, "datafile", NULL, NULL, MXML_DESCEND);
-	if (!item)
+	if (!item) {
+		print_gecko("Not Found\r\n");
 		return 0;
+	}
 	
 	print_gecko("DataFile Pointer OK\r\n");
 
 	// look for md5 in xml directly
 	mxml_node_t *md5Elem = mxmlFindElement(item, pointer, NULL, "md5", md5orig, MXML_DESCEND);
-	if (!md5Elem)
+	if (!md5Elem) {
+		print_gecko("Not Found\r\n");
 		return 0; // We didnt find the md5 in the data file
+	}
 
 	// we found our md5 in the dat file, look up info about parent node
 	mxml_node_t *gameElem = mxmlGetParent(md5Elem);
-	if (!gameElem)
+	if (!gameElem) {
+		print_gecko("Not Found\r\n");
 		return 0;
+	}
 
 	snprintf(&gameName[0], 128, "%s", mxmlElementGetAttr(gameElem, "name"));
-	print_gecko("Found a match!\r\n");
+	print_gecko("Found a match! [%s]\r\n", gameName);
+
 	return 1;
 }
 
-char *verify_get_name() {
-	if(strlen(&gameName[0]) > 32) {
-		 gameName[30] = '.';
-		 gameName[31] = '.';
-		 gameName[32] = 0;
-	 }
+char *verify_get_name(int flag) {
+	if (flag != 0) {
+		if (strlen(&gameName[0]) > 32) {
+			gameName[30] = '.';
+			gameName[31] = '.';
+			gameName[32] = 0;
+		}
+	}
 	return &gameName[0];
 }
 
