@@ -68,6 +68,7 @@ static DISC_INTERFACE* m2loader = &__io_m2ldr;
 static DISC_INTERFACE* usb = NULL;
 #endif
 
+static int forceReadMode = 0;
 static int calcChecksums = 0;
 static int dumpCounter = 0;
 static char gameName[32];
@@ -434,6 +435,8 @@ static void show_disclaimer() {
 
 /* Initialise the dvd drive + disc */
 static int initialise_dvd() {
+	print_gecko("[initialise_dvd()]\r\n");
+
 	DrawFrameStart();
 	DrawEmptyBox(30, 180, vmode->fbWidth - 38, 350, COLOR_BLACK);
 #ifdef HW_DOL
@@ -454,6 +457,7 @@ static int initialise_dvd() {
 		DrawFrameStart();
 		DrawEmptyBox(30, 180, vmode->fbWidth - 38, 350, COLOR_BLACK);
 		WriteCentre(255, "No disc detected");
+		print_gecko("No disc detected\r\n");
 		DrawFrameFinish();
 		sleep(3);
 	}
@@ -507,6 +511,7 @@ DISC_INTERFACE* get_sd_card_handler(int slot) {
 
 /* Initialise the device */
 static int initialise_device(int type, int fs) {
+	print_gecko("[initialise_device()]\r\n");
 	int ret = 0;
 
 	DrawFrameStart();
@@ -604,7 +609,8 @@ static int initialise_device(int type, int fs) {
 static int identify_disc() {
 	char readbuf[2048] __attribute__((aligned(32)));
 
-	memset(&internalName[0],0,512);
+	print_gecko("[identify_disc()]\r\n");
+	memset(&internalName[0], 0, 512);
 	// Read the header
 	DVD_LowRead64(readbuf, 2048, 0ULL);
 	if (readbuf[0]) {
@@ -615,17 +621,23 @@ static int identify_disc() {
 			size_t lastPos = strlen(gameName);
 			sprintf(&gameName[lastPos], "-disc%i", (readbuf[6]) + 1);
 		}
-		strncpy(&internalName[0],&readbuf[32],512);
+		strncpy(&internalName[0], &readbuf[32], 512);
 		internalName[511] = '\0';
-	} else {
+	}
+	else {
 		sprintf(&gameName[0], "disc%i", dumpCounter);
 	}
-	if ((*(volatile u32*) (readbuf+0x1C)) == NGC_MAGIC) {
+
+	if ((*(volatile u32*)(readbuf + 0x1C)) == NGC_MAGIC) {
+		print_gecko("NGC disc\r\n");
 		return IS_NGC_DISC;
 	}
-	if ((*(volatile u32*) (readbuf+0x18)) == WII_MAGIC) {
+	if ((*(volatile u32*)(readbuf + 0x18)) == WII_MAGIC) {
+		print_gecko("Wii disc\r\n");
 		return IS_WII_DISC;
-	} else {
+	}
+	else {
+		print_gecko("Unkown disc\r\n");
 		return IS_UNK_DISC;
 	}
 }
@@ -636,6 +648,7 @@ const char* const get_game_name() {
 
 /* the user must specify the disc type */
 static int force_disc() {
+	print_gecko("[force_disc()]\r\n");
 	int type = IS_NGC_DISC;
 	while ((get_buttons_pressed() & PAD_BUTTON_A));
 	while (1) {
@@ -659,8 +672,7 @@ static int force_disc() {
 		if (btns & PAD_BUTTON_A)
 			break;
 		while ((get_buttons_pressed() & (PAD_BUTTON_RIGHT | PAD_BUTTON_LEFT
-				| PAD_BUTTON_B | PAD_BUTTON_A)))
-			;
+				| PAD_BUTTON_B | PAD_BUTTON_A)));
 	}
 	while ((get_buttons_pressed() & PAD_BUTTON_A))
 		;
@@ -672,18 +684,30 @@ static int force_disc() {
  on the second layer is succesful or not. Returns the correct disc size.
 */
 int detect_duallayer_disc() {
-	char *readBuf = (char*)memalign(32,64);
-	uint64_t offsetToSecondLayer = (uint64_t)WII_D5_SIZE << 11;
-	int ret = WII_D5_SIZE;
-	if (DVD_LowRead64(readBuf, 64, offsetToSecondLayer) == 0) {
+	char* readBuf = (char*)memalign(32, 64);
+	print_gecko("[detect_duallayer_disc()]\r\n");
+
+	int ret = WII_D1_SIZE;
+	uint64_t offset = (uint64_t)WII_D1_SIZE << 11;
+	if (DVD_LowRead64(readBuf, 64, offset) == 0) {
+		ret = WII_D5_SIZE;
+	}
+	offset = (uint64_t)WII_D5_SIZE << 11;//offsetToSecondLayer
+	if (DVD_LowRead64(readBuf, 64, offset) == 0) {
 		ret = WII_D9_SIZE;
 	}
 	free(readBuf);
+
+	print_gecko("Detect: %s\r\n", (ret == WII_D1_SIZE) ? "Wii mini DVD size"
+		: (ret == WII_D5_SIZE) ? "Wii Single Layer"
+		: "Wii Dual Layer");
+
 	return ret;
 }
 
 /* the user must specify the device type */
 int device_type() {
+	print_gecko("[device_type()]\r\n");
 	int selected_type = 0;
 	
 	while ((get_buttons_pressed() & PAD_BUTTON_A));
@@ -732,6 +756,7 @@ int device_type() {
 /* the user must specify the file system type */
 int filesystem_type() {
 	int type = TYPE_FAT;
+
 	while ((get_buttons_pressed() & PAD_BUTTON_A));
 	while (1) {
 		DrawFrameStart();
@@ -755,6 +780,7 @@ int filesystem_type() {
 				| PAD_BUTTON_B | PAD_BUTTON_A)));
 	}
 	while ((get_buttons_pressed() & PAD_BUTTON_A));
+
 	return type;
 }
 
@@ -793,10 +819,12 @@ char *getDualLayerOption() {
 	int opt = options_map[WII_DUAL_LAYER];
 	if (opt == AUTO_DETECT)
 		return "Auto";
+	else if (opt == SINGLE_MINI)
+		return "1.4GB";
 	else if (opt == SINGLE_LAYER)
-		return "No";
+		return "4.4GB";
 	else if (opt == DUAL_LAYER)
-		return "Yes";
+		return "8GB";
 	return 0;
 }
 
@@ -876,7 +904,7 @@ static void get_settings(int disc_type) {
 		}
 		// Wii Settings
 		else if(disc_type == IS_WII_DISC) {
-			WriteFont(80, 160+(32*1), "Dual Layer");
+			WriteFont(80, 160 + (32 * 1), "Dump Size");
 			DrawSelectableButton(vmode->fbWidth-220, 160+(32*1), -1, 160+(32*1)+30, getDualLayerOption(), (!currentSettingPos) ? B_SELECTED:B_NOSELECT, -1);
 			WriteFont(80, 160+(32*2), "Chunk Size");
 			DrawSelectableButton(vmode->fbWidth-220, 160+(32*2), -1, 160+(32*2)+30, getChunkSizeOption(), (currentSettingPos==1) ? B_SELECTED:B_NOSELECT, -1);
@@ -1020,25 +1048,30 @@ void dump_bca() {
 	}
 }
 
-void dump_info(char *md5, char *sha1, u32 crc32, int verified, u32 seconds) {
+void dump_info(char* md5, char* sha1, u32 crc32, int verified, u32 seconds, char* name) {
 	char infoLine[1024];
 	memset(infoLine, 0, 1024);
-	if(md5 && sha1 && crc32) {
+	if (md5 && sha1 && crc32) {
 		sprintf(infoLine, "--File Generated by CleanRip v%i.%i.%i--"
-						  "\r\n\r\nFilename: %s\r\nInternal Name: %s\r\nMD5: %s\r\n"
-						  "SHA-1: %s\r\nCRC32: %08X\r\nVersion: 1.0%i\r\nVerified: %s\r\nDuration: %u min. %u sec.\r\n",
-				V_MAJOR,V_MID,V_MINOR,&gameName[0],&internalName[0], md5, sha1, crc32, *(u8*)0x80000007,
-				verified ? "Yes" : "No", seconds/60, seconds%60);
+			"\r\n\r\nFilename: %s\r\nInternal Name: %s\r\nMD5: %s\r\n"
+			"SHA-1: %s\r\nCRC32: %08X\r\nVersion: 1.0%i\r\nVerified: %s\r\nDuration: %u min. %u sec.\r\n",
+			V_MAJOR, V_MID, V_MINOR, &gameName[0], &internalName[0], md5, sha1, crc32, *(u8*)0x80000007,
+			verified ? "Yes" : "No", seconds / 60, seconds % 60);
 	}
 	else {
 		sprintf(infoLine, "--File Generated by CleanRip v%i.%i.%i--"
-						  "\r\n\r\nFilename: %s\r\nInternal Name: %s\r\n"
-						  "Version: 1.0%i\r\nChecksum calculations disabled\r\nDuration: %u min. %u sec.\r\n",
-				V_MAJOR,V_MID,V_MINOR,&gameName[0],&internalName[0], *(u8*)0x80000007, seconds/60, seconds%60);
+			"\r\n\r\nFilename: %s\r\nInternal Name: %s\r\n"
+			"Version: 1.0%i\r\nChecksum calculations disabled\r\nDuration: %u min. %u sec.\r\n",
+			V_MAJOR, V_MID, V_MINOR, &gameName[0], &internalName[0], *(u8*)0x80000007, seconds / 60, seconds % 60);
 	}
-	sprintf(txtbuffer, "%s%s-dumpinfo.txt", &mountPath[0], &gameName[0]);
+	if (name != NULL) {
+		sprintf(txtbuffer, "%s%s-dumpinfo.txt", &mountPath[0], &gameName[0]);
+	}
+	else {
+		sprintf(txtbuffer, "%s%s-dumpinfo.txt", &mountPath[0], &gameName[0]);
+	}
 	remove(&txtbuffer[0]);
-	FILE *fp = fopen(txtbuffer, "wb");
+	FILE* fp = fopen(txtbuffer, "wb");
 	if (fp) {
 		fwrite(infoLine, 1, strlen(&infoLine[0]), fp);
 		fclose(fp);
@@ -1062,6 +1095,8 @@ int dump_game(int disc_type, int type, int fs) {
 	writer_msg msg;
 	int i;
 
+	print_gecko("[dump_game()]\r\n\tdisc_type = %d\r\n\ttype = %d\r\n\tfs = %d\r\n", disc_type, type, fs);
+
 	MQ_Init(&blockq, MSG_COUNT);
 	MQ_Init(&msgq, MSG_COUNT);
 
@@ -1079,8 +1114,9 @@ int dump_game(int disc_type, int type, int fs) {
 	u32 startLBA = 0;
 	u32 endLBA = (disc_type == IS_NGC_DISC || disc_type == IS_DATEL_DISC) ? NGC_DISC_SIZE
 			: (options_map[WII_DUAL_LAYER] == AUTO_DETECT ? detect_duallayer_disc()
-				: (options_map[WII_DUAL_LAYER] == DUAL_LAYER ? WII_D9_SIZE 
-					: WII_D5_SIZE));
+				: (options_map[WII_DUAL_LAYER] == SINGLE_MINI ? WII_D1_SIZE
+					: (options_map[WII_DUAL_LAYER] == DUAL_LAYER ? WII_D9_SIZE
+						: WII_D5_SIZE)));
 
 	// Work out the chunk size
 	u32 chunk_size_wii = options_map[WII_CHUNK_SIZE];
@@ -1096,7 +1132,7 @@ int dump_game(int disc_type, int type, int fs) {
 		opt_chunk_size = (chunk_size_wii + 1) * ONE_GIGABYTE;
 	}
 
-	if (disc_type == IS_NGC_DISC || disc_type == IS_DATEL_DISC) {
+	if (disc_type == IS_NGC_DISC || disc_type == IS_DATEL_DISC || options_map[WII_DUAL_LAYER] == SINGLE_MINI) {
 		opt_chunk_size = NGC_DISC_SIZE;
 	}
 
@@ -1189,10 +1225,26 @@ int dump_game(int disc_type, int type, int fs) {
 		wmsg->ret_box = blockq;
 
 		// Read from Disc
-		if(disc_type == IS_DATEL_DISC)
-			ret = DVD_LowRead64Datel(wmsg->data, (u32)opt_read_size, (u64)startLBA << 11, isKnownDatel);
-		else
+		if (disc_type == IS_DATEL_DISC) {
+			if (forceReadMode) {
+				ret = DVD_LowRead64(wmsg->data, (u32)opt_read_size, (u64)startLBA << 11);
+
+				// If we fail to read a sector, fill it up with 55h (as required by redump)
+				if (ret) {
+					for (int i = 0; i < wmsg->length; i++) {
+						((char*)wmsg->data)[i] = 0x55;
+					}
+					ret = 0;
+				}
+			}
+			else {
+				ret = DVD_LowRead64Datel(wmsg->data, (u32)opt_read_size, (u64)startLBA << 11, isKnownDatel);
+			}
+		}
+		else {
 			ret = DVD_LowRead64(wmsg->data, (u32)opt_read_size, (u64)startLBA << 11);
+		}
+
 		MQ_Send(msgq, (mqmsg_t)wmsg, MQ_MSG_BLOCK);
 		if(calcChecksums) {
 			// Calculate MD5
@@ -1203,15 +1255,15 @@ int dump_game(int disc_type, int type, int fs) {
 			crc32 = Crc32_ComputeBuf( crc32, wmsg+1, (u32) opt_read_size);
 		}
 
-		if(disc_type == IS_DATEL_DISC && (((u64)startLBA<<11) + opt_read_size == 0x100000)){
+		if (disc_type == IS_DATEL_DISC && (((u64)startLBA << 11) + opt_read_size == 0x100000)) {
 			crc100000 = crc32;
 			isKnownDatel = datel_findCrcSum(crc100000);
 			DrawFrameStart();
 			DrawEmptyBox(30, 180, vmode->fbWidth - 38, 350, COLOR_BLACK);
-			if(!isKnownDatel) {
+			if (!isKnownDatel) {
 				WriteCentre(215, "(Warning: This disc will take a while to dump!)");
 			}
-			sprintf(txtbuffer, "%s CRC100000=%08X", (isKnownDatel ? "Known":"Unknown"), crc100000);
+			sprintf(txtbuffer, "%s CRC100000=%08X", (isKnownDatel ? "Known" : "Unknown"), crc100000);
 			WriteCentre(255, txtbuffer);
 			WriteCentre(315, "Press  A to continue  B to exit");
 			u64 waitTimeStart = gettime();
@@ -1244,6 +1296,47 @@ int dump_game(int disc_type, int type, int fs) {
 		}
 		startLBA+=opt_read_size>>11;
 	}
+
+	if (forceReadMode) {
+		// Remainder of data
+		if (!ret && startLBA < endLBA) {
+			MQ_Receive(blockq, (mqmsg_t*)&wmsg, MQ_MSG_BLOCK);
+			if (wmsg == NULL) { // asynchronous write error
+				LWP_JoinThread(writer, NULL);
+				fclose(fp);
+				DrawFrameStart();
+				DrawEmptyBox(30, 180, vmode->fbWidth - 38, 350, COLOR_BLACK);
+				WriteCentre(255, "Write Error!");
+				WriteCentre(315, "Exiting in 10 seconds");
+				DrawFrameFinish();
+				sleep(10);
+				exit(1);
+			}
+			wmsg->command = MSG_WRITE;
+			wmsg->data = wmsg + 1;
+			wmsg->length = (u32)((endLBA - startLBA) << 11);
+			wmsg->ret_box = blockq;
+
+			ret = DVD_LowRead64(wmsg->data, wmsg->length, (u64)startLBA << 11);
+			// If we fail to read a sector, fill it up with 55h (as required by redump)
+			if (ret) {
+				for (int i = 0; i < wmsg->length; i++) {
+					((char*)wmsg->data)[i] = 0x55;
+				}
+				ret = 0;
+			}
+
+			MQ_Send(msgq, (mqmsg_t)wmsg, MQ_MSG_BLOCK);
+			if (calcChecksums) {
+				// Calculate MD5
+				md5_append(&state, (const md5_byte_t*)(wmsg + 1), wmsg->length);
+				// Calculate SHA-1
+				SHA1Input(&sha, (const unsigned char*)(wmsg + 1), wmsg->length);
+				// Calculate CRC32
+				crc32 = Crc32_ComputeBuf(crc32, wmsg + 1, wmsg->length);
+			}
+		}
+	}
 	if(calcChecksums) {
 		md5_finish(&state, digest);
 	}
@@ -1268,6 +1361,8 @@ int dump_game(int disc_type, int type, int fs) {
 		return 0;
 	}
 	else if (ret == -61) {
+		print_gecko("Copy Cancelled\r\n");
+
 		DrawFrameStart();
 		DrawEmptyBox (30,180, vmode->fbWidth-38, 350, COLOR_BLACK);
 		sprintf(txtbuffer, "Copy Cancelled");
@@ -1278,6 +1373,8 @@ int dump_game(int disc_type, int type, int fs) {
 		return 0;
 	}
 	else {
+		print_gecko("Copy completed\r\n");
+
 		sprintf(txtbuffer,"Copy completed in %u mins. Press A",diff_sec(startTime, gettime())/60);
 		DrawFrameStart();
 		DrawEmptyBox (30,180, vmode->fbWidth-38, 350, COLOR_BLACK);
@@ -1294,23 +1391,110 @@ int dump_game(int disc_type, int type, int fs) {
 			else {
 				sprintf(sha1sum, "Error computing SHA-1");
 			}
+			char* name = NULL;
 			int verified = (verify_is_available(disc_type) && verify_findMD5Sum(&md5sum[0], disc_type));
+			if (verified) {
+				char tempstr[2048];
+
+				if (opt_chunk_size < endLBA) {
+					for (int i = 0; i < chunk; i++) {
+						sprintf(txtbuffer, "%s%s.part%i.iso", &mountPath[0], &gameName[0], i);
+						sprintf(tempstr, "%s%s.part%i.iso", &mountPath[0], verify_get_name(0), i);
+						remove(&tempstr[0]);
+						rename(txtbuffer, tempstr);
+					}
+
+				}
+				else {
+					sprintf(txtbuffer, "%s%s.iso", &mountPath[0], &gameName[0]);
+					sprintf(tempstr, "%s%s.iso", &mountPath[0], verify_get_name(0));
+					remove(&tempstr[0]);
+					rename(txtbuffer, tempstr);
+				}
+
+				sprintf(txtbuffer, "%s%s-dumpinfo.txt", &mountPath[0], &gameName[0]);
+				sprintf(tempstr, "%s%s-dumpinfo.txt", &mountPath[0], verify_get_name(0));
+				remove(&tempstr[0]);
+				rename(txtbuffer, tempstr);
+
+				sprintf(txtbuffer, "%s%s.bca", &mountPath[0], &gameName[0]);
+				sprintf(tempstr, "%s%s.bca", &mountPath[0], verify_get_name(0));
+				remove(&tempstr[0]);
+				rename(txtbuffer, tempstr);
+
+				name = verify_get_name(0);
+			}
+			if ((disc_type == IS_DATEL_DISC)) {
+				verified = datel_findMD5Sum(&md5sum[0]);
+				if (verified) {
+					char tempstr[2048];
+					sprintf(txtbuffer, "%s%s-dumpinfo.txt", &mountPath[0], &gameName[0]);
+					sprintf(tempstr, "%s%s-dumpinfo.txt", &mountPath[0], datel_get_name(0));
+					remove(&tempstr[0]);
+					rename(txtbuffer, tempstr);
+
+					sprintf(txtbuffer, "%s%s.bca", &mountPath[0], &gameName[0]);
+					sprintf(tempstr, "%s%s.bca", &mountPath[0], datel_get_name(0));
+					remove(&tempstr[0]);
+					rename(txtbuffer, tempstr);
+
+					sprintf(txtbuffer, "%s%s.iso", &mountPath[0], &gameName[0]);
+					sprintf(tempstr, "%s%s.iso", &mountPath[0], datel_get_name(0));
+					remove(&tempstr[0]);
+					rename(txtbuffer, tempstr);
+
+					name = datel_get_name(0);
+				}
+			}
+
+			dump_info(&md5sum[0], &sha1sum[0], crc32, verified, diff_sec(startTime, gettime()), name);
+
+			print_gecko("MD5: %s\r\n", verified ? "Verified OK" : "Not Verified ");
+
 			sprintf(txtbuffer, "MD5: %s", verified ? "Verified OK" : "");
-			WriteCentre(230,txtbuffer);
-			WriteCentre(255,verified ? verify_get_name() : "Not Verified with redump.org");
-			WriteCentre(280,&md5sum[0]);
-			dump_info(&md5sum[0], &sha1sum[0], crc32, verified, diff_sec(startTime, gettime()));
+			WriteCentre(230, txtbuffer);
+			if ((disc_type == IS_DATEL_DISC)) {
+				WriteCentre(255, verified ? datel_get_name(1) : "Not Verified with datel.dat");
+			}
+			else {
+				WriteCentre(255, verified ? verify_get_name(1) : "Not Verified with redump.org");
+			}
+			WriteCentre(280, &md5sum[0]);
+
 		}
 		else {
-			dump_info(NULL, NULL, 0, 0, diff_sec(startTime, gettime()));
+			dump_info(NULL, NULL, 0, 0, diff_sec(startTime, gettime()), NULL);
 		}
-		if((disc_type == IS_DATEL_DISC)) {
+		if ((disc_type == IS_DATEL_DISC)) {
+			//Rename
+			char tempstr[2048];
+			sprintf(txtbuffer, "%s%s-dumpinfo.txt", &mountPath[0], &gameName[0]);
+			sprintf(tempstr, "%sdatel_%08x-dumpinfo.txt", &mountPath[0], crc100000);
+			remove(&tempstr[0]);
+			rename(txtbuffer, tempstr);
+
+			sprintf(txtbuffer, "%s%s.bca", &mountPath[0], &gameName[0]);
+			sprintf(tempstr, "%sdatel_%08x.bca", &mountPath[0], crc100000);
+			remove(&tempstr[0]);
+			rename(txtbuffer, tempstr);
+
+			sprintf(txtbuffer, "%s%s.iso", &mountPath[0], &gameName[0]);
+			sprintf(tempstr, "%sdatel_%08x.iso", &mountPath[0], crc100000);
+			remove(&tempstr[0]);
+			rename(txtbuffer, tempstr);
+
+			//sprintf(txtbuffer, "%s%s.skp", &mountPath[0], &gameName[0]);
+			//sprintf(tempstr, "%sdatel_%08x.skp", &mountPath[0], crc100000);
+			//remove(&tempstr[0]);
+			//rename(txtbuffer, tempstr);
+
 			dump_skips(&mountPath[0], crc100000);
 		}
-		WriteCentre(315,"Press  A to continue  B to exit");
+		WriteCentre(315, "Press  A to continue  B to exit");
 		dvd_motor_off();
 		wait_press_A_exit_B();
 	}
+
 	return 1;
 }
 
@@ -1324,6 +1508,7 @@ int main(int argc, char **argv) {
 		usb_flush(1);
 		print_usb = 1;
 	}
+	print_gecko("=====================================\r\n");
 	print_gecko("CleanRip Version %i.%i.%i\r\n",V_MAJOR, V_MID, V_MINOR);
 	print_gecko("Arena Size: %iKb\r\n",(SYS_GetArena1Hi()-SYS_GetArena1Lo())/1024);
 
@@ -1336,12 +1521,16 @@ int main(int argc, char **argv) {
 #endif
 
 	// Ask the user if they want checksum calculations enabled this time?
-	calcChecksums = DrawYesNoDialog("Enable checksum calculations?",
-									"(Enabling will add about 3 minutes)");
+	calcChecksums = 1;//DrawYesNoDialog("Enable checksum calculations?",
+					//				"(Enabling will add about 3 minutes)");
 
 	int reuseSettings = NOT_ASKED;
 	while (1) {
 		int type, fs, ret;
+
+		forceReadMode = 0;
+
+		print_gecko("reuseSettings = %d\r\ncalcChecksums = %d\r\n", reuseSettings, calcChecksums);
 		if(reuseSettings == NOT_ASKED || reuseSettings == ANSWER_NO) {
 			type = device_type();
 			fs = filesystem_type();
@@ -1357,7 +1546,7 @@ int main(int argc, char **argv) {
 			verify_init(&mountPath[0]);
 #ifdef HW_RVL
 			// Ask the user if they want to download new ones
-			verify_download(&mountPath[0]);
+			//verify_download(&mountPath[0]);
 
 			// User might've got some new files.
 			verify_init(&mountPath[0]);
@@ -1387,10 +1576,22 @@ int main(int argc, char **argv) {
 				disc_type = IS_DATEL_DISC;
 				datel_init(&mountPath[0]);
 #ifdef HW_RVL
-				datel_download(&mountPath[0]);
+				//datel_download(&mountPath[0]);
 				datel_init(&mountPath[0]);
 #endif
 				calcChecksums = 1;
+				print_gecko("unlicensed datel disc\r\n");
+
+				if (DrawYesNoDialog("Enable Force Read Mode?",
+					"(It may take a lot of time)")) {
+					//Yes
+					forceReadMode = 1;
+					print_gecko("Enable Force Read Mode (Unuse DVD_LowRead64Datel())\r\n");
+				}
+				else {
+					forceReadMode = 0;
+					print_gecko("Disable Force Read Mode (use DVD_LowRead64Datel())\r\n");
+				}
 			}
 		}
 		

@@ -52,6 +52,8 @@ static mxml_node_t *datelXML = NULL;
 static char gameName[256];
 
 void datel_init(char *mountPath) {
+	print_gecko("[datel_init()]\r\n");
+
 	if (datel_initialized) {
 		return;
 	}
@@ -68,6 +70,7 @@ void datel_init(char *mountPath) {
 	FILE *fp = NULL;
 	// Check for the datel DAT and read it
 	sprintf(txtbuffer, "%sdatel.dat", mountPath);
+	print_gecko("Open datel.dat [%s]\r\n", txtbuffer);
 	fp = fopen(txtbuffer, "rb");
 	if (fp) {
 		fseek(fp, 0, SEEK_END);
@@ -170,7 +173,7 @@ void datel_download(char *mountPath) {
 int datel_findCrcSum(int crcorig) {
 
 	NumSkips = 0;
-	print_gecko("Looking for CRC [%x]\r\n", crcorig);
+	print_gecko("[datel_findCrcSum()]\r\nLooking for CRC [%x]\r\n", crcorig);
 	char *xmlPointer = datelDAT;
 	if(xmlPointer) {
 		mxml_node_t *pointer = datelXML;
@@ -211,31 +214,30 @@ int datel_findCrcSum(int crcorig) {
 					strncpy(&crc[0], mxmlElementGetAttr(fillElem, "skipfill"), 32);
 
 					SkipFill = strtoul(crc, NULL, 16);
-					//print_gecko("Comparing game [%x] and crc [%x]\r\n",mxmlElementGetAttr(nameElem, "name"),mxmlElementGetAttr(crcElem, "crc100000"));
+					//print_gecko("Comparing game [%x] and crc [%x]\r\n", mxmlElementGetAttr(nameElem, "name"), mxmlElementGetAttr(crcElem, "crc100000"));
 					if (crcval == crcorig) {
-						snprintf(&gameName[0], 128, "%s", mxmlElementGetAttr(
-								nameElem, "name"));
-						print_gecko("Found a match!\r\n");
-				mxml_index_t *skipiterator = mxmlIndexNew(gameElem, "skip", NULL);
-				mxml_node_t *skipElem = NULL;
+						snprintf(&gameName[0], 128, "%s", mxmlElementGetAttr(nameElem, "name"));
+						print_gecko("Found a match! [%s]\r\n", gameName);
+        				mxml_index_t *skipiterator = mxmlIndexNew(gameElem, "skip", NULL);
+        				mxml_node_t *skipElem = NULL;
 
-				//print_gecko("Item Pointer OK\r\n");
-				// iterate over all the <game> entries
-				while ((skipElem = mxmlIndexEnum(skipiterator)) != NULL) {
-					if (NumSkips >= MAX_SKIPS)
-						DrawYesNoDialog("datel crc", "TODO: Too many skips.  Fix source code.");
-					char skipstr[64];
-					memset(&skipstr[0], 0, 64);
-					strncpy(&skipstr[0], mxmlElementGetAttr(skipElem, "start"), 32);
+        				//print_gecko("Item Pointer OK\r\n");
+        				// iterate over all the <game> entries
+        				while ((skipElem = mxmlIndexEnum(skipiterator)) != NULL) {
+        					if (NumSkips >= MAX_SKIPS)
+        						DrawYesNoDialog("datel crc", "TODO: Too many skips.  Fix source code.");
+        					char skipstr[64];
+        					memset(&skipstr[0], 0, 64);
+        					strncpy(&skipstr[0], mxmlElementGetAttr(skipElem, "start"), 32);
 
-					SkipStart[NumSkips] = strtoull(skipstr, NULL, 16);
+        					SkipStart[NumSkips] = strtoull(skipstr, NULL, 16);
 
-					memset(&skipstr[0], 0, 64);
-					strncpy(&skipstr[0], mxmlElementGetAttr(skipElem, "stop"), 32);
+        					memset(&skipstr[0], 0, 64);
+        					strncpy(&skipstr[0], mxmlElementGetAttr(skipElem, "stop"), 32);
 
-					SkipStop[NumSkips] = strtoull(skipstr, NULL, 16);
-					NumSkips++;
-				}
+        					SkipStop[NumSkips] = strtoull(skipstr, NULL, 16);
+        					NumSkips++;
+        				}
 						return 1;
 					}
 				}
@@ -246,43 +248,50 @@ int datel_findCrcSum(int crcorig) {
 }
 
 void datel_adjustStartStop(uint64_t* start, u32* length, u32* fill) {
-	int n=0;
+	int n = 0;
 	*fill = SkipFill;
-	for (n=0; (n<NumSkips) && (*length > 0); n++) {
+
+	for (n = 0; (n < NumSkips) && (*length > 0); n++) {
 		if ((SkipStart[n] <= *start) && (SkipStop[n] >= *start)) {
-			if (SkipStop[n] + 1 > *start + *length)
+			if (SkipStop[n] + 1 > *start + *length) {
 				*length = 0;
+			}
 			else {
 				*length -= SkipStop[n] + 1 - *start;
 				*start = SkipStop[n] + 1;
 			}
 		}
-		if ((SkipStart[n] < (*start + *length)) && (SkipStop[n] >= (*start + *length - 1)) && (*length > 0))
+		if ((SkipStart[n] < (*start + *length)) && (SkipStop[n] >= (*start + *length - 1)) && (*length > 0)) {
 			*length = SkipStart[n] - *start;
+		}
 	}
 }
 
 void datel_addSkip(uint64_t start, u32 length) {
-	if ((NumSkips > 0) && (start == SkipStop[NumSkips-1] + 1))
-		SkipStop[NumSkips-1] += length;
+	if ((NumSkips > 0) && (start == SkipStop[NumSkips - 1] + 1)) {
+		SkipStop[NumSkips - 1] += length;
+	}
 	else {
 		SkipStart[NumSkips] = start;
 		SkipStop[NumSkips] = start + length - 1;
 		NumSkips++;
-		if (NumSkips == MAX_SKIPS)
-			NumSkips=0;
+		if (NumSkips == MAX_SKIPS) {
+			NumSkips = 0;
+		}
 	}
 }
 
 void dump_skips(char *mountPath, u32 crc100000) {
-	sprintf(txtbuffer, "%s%s.skp", mountPath, get_game_name());
-	FILE *fp = fopen(txtbuffer, "wb");
+	//sprintf(txtbuffer, "%s%s.skp", mountPath, get_game_name());
+	sprintf(txtbuffer, "%sdatel_%08x.skp", mountPath, crc100000);
+	FILE* fp = fopen(txtbuffer, "wb");
 	if (fp) {
-		int sk=0;
+		int sk = 0;
 		char SkipsInfo[100];
+
 		sprintf(SkipsInfo, "\t\t<skipcrc crc100000=\"%08X\" skipfill=\"%02X\"/>\n", crc100000, SkipFill);
 		fwrite(SkipsInfo, 1, strlen(&SkipsInfo[0]), fp);
-		for (sk=0;sk<NumSkips;sk++) {
+		for (sk = 0; sk < NumSkips; sk++) {
 			sprintf(SkipsInfo, "\t\t<skip start=\"%08X\" stop=\"%08X\"/>\n", (u32)(SkipStart[sk] & 0xFFFFFFFF), (u32)(SkipStop[sk] & 0xFFFFFFFF));
 			fwrite(SkipsInfo, 1, strlen(&SkipsInfo[0]), fp);
 		}
@@ -290,6 +299,57 @@ void dump_skips(char *mountPath, u32 crc100000) {
 	}
 }
 
+int datel_findMD5Sum(const char* md5orig) {
+
+	print_gecko("[datel_findMD5Sum()]\r\nLooking for MD5 [%s]\r\n", md5orig);
+
+	char* xmlPointer = datelDAT;
+	if (xmlPointer) {
+		mxml_node_t* pointer = datelXML;
+
+		pointer = mxmlLoadString(NULL, xmlPointer, MXML_TEXT_CALLBACK);
+		if (!pointer)
+			return 0;
+
+		print_gecko("Looking in the Datel XML\r\n");
+		// open the <datafile>
+		mxml_node_t* item = mxmlFindElement(pointer, pointer, "datafile", NULL, NULL, MXML_DESCEND);
+		if (!item) {
+			print_gecko("Not Found\r\n");
+			return 0;
+		}
+
+		print_gecko("DataFile Pointer OK\r\n");
+		mxml_node_t* md5Elem = mxmlFindElement(item, pointer, NULL, "md5", md5orig, MXML_DESCEND);
+		if (!md5Elem) {
+			print_gecko("Not Found\r\n");
+			return 0; // We didnt find the md5 in the data file
+		}
+
+		mxml_node_t* gameElem = mxmlGetParent(md5Elem);
+		if (!gameElem) {
+			print_gecko("Not Found\r\n");
+			return 0;
+		}
+
+		snprintf(&gameName[0], 128, "%s", mxmlElementGetAttr(gameElem, "name"));
+		print_gecko("Found a match! [%s]\r\n", gameName);
+
+		return 1;
+	}
+	return 0;
+}
+
+char* datel_get_name(int flag) {
+	if (flag != 0) {
+		if (strlen(&gameName[0]) > 32) {
+			gameName[30] = '.';
+			gameName[31] = '.';
+			gameName[32] = 0;
+		}
+	}
+	return &gameName[0];
+}
 
 int datel_is_available() {
 	return datelDAT != NULL;
