@@ -1488,7 +1488,7 @@ int dump_game(int disc_type, int type, int fs) {
 			//remove(&tempstr[0]);
 			//rename(txtbuffer, tempstr);
 
-			dump_skips(&mountPath[0], crc100000);
+			if (!forceReadMode) dump_skips(&mountPath[0], crc100000);
 		}
 		WriteCentre(315, "Press  A to continue  B to exit");
 		dvd_motor_off();
