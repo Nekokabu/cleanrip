@@ -35,8 +35,8 @@
 #include "main.h"
 #include "verify.h"
 
-// Pointers to the file
-static char *datelDAT = NULL;
+ // Pointers to the file
+static char* datelDAT = NULL;
 static int datel_initialized = 0;
 static int SkipFill = 0;
 static int NumSkips = 0;
@@ -48,18 +48,18 @@ static int datelDontAskAgain = 0;
 #endif
 
 // XML stuff
-static mxml_node_t *datelXML = NULL;
+static mxml_node_t* datelXML = NULL;
 static char gameName[256];
 
-void datel_init(char *mountPath) {
+void datel_init(char* mountPath) {
 	print_gecko("[datel_init()]\r\n");
 
 	if (datel_initialized) {
 		return;
 	}
-	
-	if(datelDAT) {
-		if(datelXML) {
+
+	if (datelDAT) {
+		if (datelXML) {
 			mxmlDelete(datelXML);
 			free(datelXML);
 		}
@@ -67,7 +67,7 @@ void datel_init(char *mountPath) {
 	}
 
 	mxmlSetErrorCallback((mxml_error_cb_t)print_gecko);
-	FILE *fp = NULL;
+	FILE* fp = NULL;
 	// Check for the datel DAT and read it
 	sprintf(txtbuffer, "%sdatel.dat", mountPath);
 	print_gecko("Open datel.dat [%s]\r\n", txtbuffer);
@@ -77,10 +77,10 @@ void datel_init(char *mountPath) {
 		int size = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
 		if (size > 0) {
-			datelDAT = (char*) memalign(32, size);
+			datelDAT = (char*)memalign(32, size);
 			if (datelDAT) {
 				fread(datelDAT, 1, size, fp);
-			}		
+			}
 		}
 		fclose(fp);
 		fp = NULL;
@@ -90,60 +90,60 @@ void datel_init(char *mountPath) {
 		datelXML = mxmlLoadString(NULL, datelDAT, MXML_TEXT_CALLBACK);
 	}
 
-	print_gecko("DAT Files [Datel: %s]\r\n", datelDAT ? "YES":"NO");
-	datel_initialized = (datelDAT&&datelXML);
+	print_gecko("DAT Files [Datel: %s]\r\n", datelDAT ? "YES" : "NO");
+	datel_initialized = (datelDAT && datelXML);
 }
 
 #ifdef HW_RVL
 // If there was some new files obtained, return 1, else 0
-void datel_download(char *mountPath) {
-	if(datelDontAskAgain) {
+void datel_download(char* mountPath) {
+	if (datelDontAskAgain) {
 		return;
 	}
-	
+
 	int res = 0;
 	// Ask the user if they want to update from the web
-	if(datel_initialized) {
-		char *line1 = "gc-forever Datel DAT file found";
-		char *line2 = "Check for updated DAT file?";
+	if (datel_initialized) {
+		char* line1 = "gc-forever Datel DAT file found";
+		char* line2 = "Check for updated DAT file?";
 		res = DrawYesNoDialog(line1, line2);
 	}
 	else {
-		char *line1 = "gc-forever Datel DAT files not found";
-		char *line2 = "Download them now?";
+		char* line1 = "gc-forever Datel DAT files not found";
+		char* line2 = "Download them now?";
 		res = DrawYesNoDialog(line1, line2);
 	}
-	
+
 	// If yes, lets download an update
-	if(res) {
+	if (res) {
 		// Initialize the network
-		if(!net_initialized) {
+		if (!net_initialized) {
 			char ip[16];
 			DrawMessageBox(D_INFO, "Checking for DAT updates\n \nInitializing Network...");
 			res = if_config(ip, NULL, NULL, true);
-      		if(res >= 0) {
-	      		sprintf(txtbuffer, "Checking for DAT updates\nNetwork Initialized!\nIP: %s", ip);
-	      		DrawMessageBox(D_INFO, txtbuffer);
+			if (res >= 0) {
+				sprintf(txtbuffer, "Checking for DAT updates\nNetwork Initialized!\nIP: %s", ip);
+				DrawMessageBox(D_INFO, txtbuffer);
 				net_initialized = 1;
 				print_gecko("Network Initialized!\r\n");
 			}
-      		else {
-	      		DrawMessageBox(D_FAIL, "Checking for DAT updates\nNetwork failed to Initialize!");
-	      		sleep(5);
-        		net_initialized = 0;
+			else {
+				DrawMessageBox(D_FAIL, "Checking for DAT updates\nNetwork failed to Initialize!");
+				sleep(5);
+				net_initialized = 0;
 				print_gecko("Network Failed to Initialize!\r\n");
-        		return;
-      		}
-  		}
+				return;
+			}
+		}
 
-  		// Download the GC DAT
+		// Download the GC DAT
 		char datFilePath[64];
-  		sprintf(datFilePath, "%sdatel.dat",mountPath);
-  		u8 *xmlFile = (u8*)memalign(32, 1*1024*1024);
-		if((res = http_request("www.gc-forever.com","/datfile/datel.dat", xmlFile, (1*1024*1024), 0, 0)) > 0) {
+		sprintf(datFilePath, "%sdatel.dat", mountPath);
+		u8* xmlFile = (u8*)memalign(32, 1 * 1024 * 1024);
+		if ((res = http_request("www.gc-forever.com", "/datfile/datel.dat", xmlFile, (1 * 1024 * 1024), 0, 0)) > 0) {
 			remove(datFilePath);
-			FILE *fp = fopen(datFilePath, "wb");
-			if(fp) {
+			FILE* fp = fopen(datFilePath, "wb");
+			if (fp) {
 				DrawMessageBox(D_INFO, "Checking for updates\nSaving GC DAT...");
 				fwrite(xmlFile, 1, res, fp);
 				fclose(fp);
@@ -174,41 +174,38 @@ int datel_findCrcSum(int crcorig) {
 
 	NumSkips = 0;
 	print_gecko("[datel_findCrcSum()]\r\nLooking for CRC [%x]\r\n", crcorig);
-	char *xmlPointer = datelDAT;
-	if(xmlPointer) {
-		mxml_node_t *pointer = datelXML;
-		
-		pointer = mxmlLoadString(NULL, xmlPointer, MXML_TEXT_CALLBACK);
-		
+	char* xmlPointer = datelDAT;
+
+	if (xmlPointer) {
+		mxml_node_t* pointer = datelXML;
+
+		//pointer = mxmlLoadString(NULL, xmlPointer, MXML_TEXT_CALLBACK);
+
 		print_gecko("Looking in the Datel XML\r\n");
 		if (pointer) {
 			// open the <datafile>
-			mxml_node_t *item = mxmlFindElement(pointer, pointer, "datafile", NULL,
-					NULL, MXML_DESCEND);
-			print_gecko("DataFile Pointer OK\r\n");
+			mxml_node_t* item = mxmlFindElement(pointer, pointer, "datafile", NULL, NULL, MXML_DESCEND);
 			if (item) {
-				mxml_index_t *iterator = mxmlIndexNew(item, "game", NULL);
-				mxml_node_t *gameElem = NULL;
+				print_gecko("DataFile Pointer OK\r\n");
+				mxml_index_t* iterator = mxmlIndexNew(item, "game", NULL);
+				mxml_node_t* gameElem = NULL;
 
 				//print_gecko("Item Pointer OK\r\n");
 				// iterate over all the <game> entries
 				while ((gameElem = mxmlIndexEnum(iterator)) != NULL) {
 					// get the crc and compare it
-					mxml_node_t *crcElem = mxmlFindElement(gameElem, gameElem,
-							NULL, "crc100000", NULL, MXML_DESCEND);
+					mxml_node_t* crcElem = mxmlFindElement(gameElem, gameElem, NULL, "crc100000", NULL, MXML_DESCEND);
 					// get the name too
-					mxml_node_t *nameElem = mxmlFindElement(gameElem, gameElem,
-							NULL, "name", NULL, MXML_DESCEND);
-					mxml_node_t *fillElem = mxmlFindElement(gameElem, gameElem,
-							NULL, "skipfill", NULL, MXML_DESCEND);
+					mxml_node_t* nameElem = mxmlFindElement(gameElem, gameElem, NULL, "name", NULL, MXML_DESCEND);
+					mxml_node_t* fillElem = mxmlFindElement(gameElem, gameElem, NULL, "skipfill", NULL, MXML_DESCEND);
 
 					char crc[64];
 					memset(&crc[0], 0, 64);
 					strncpy(&crc[0], mxmlElementGetAttr(crcElem, "crc100000"), 32);
 
 					int crcval = strtoul(crc, NULL, 16);
-					if (!strncmp(crc, "default", 7))
-						crcval = crcorig;
+					//if (!strncmp(crc, "default", 7))
+					//	crcval = crcorig;
 
 					memset(&crc[0], 0, 64);
 					strncpy(&crc[0], mxmlElementGetAttr(fillElem, "skipfill"), 32);
@@ -218,32 +215,36 @@ int datel_findCrcSum(int crcorig) {
 					if (crcval == crcorig) {
 						snprintf(&gameName[0], 128, "%s", mxmlElementGetAttr(nameElem, "name"));
 						print_gecko("Found a match! [%s]\r\n", gameName);
-        				mxml_index_t *skipiterator = mxmlIndexNew(gameElem, "skip", NULL);
-        				mxml_node_t *skipElem = NULL;
 
-        				//print_gecko("Item Pointer OK\r\n");
-        				// iterate over all the <game> entries
-        				while ((skipElem = mxmlIndexEnum(skipiterator)) != NULL) {
-        					if (NumSkips >= MAX_SKIPS)
-        						DrawYesNoDialog("datel crc", "TODO: Too many skips.  Fix source code.");
-        					char skipstr[64];
-        					memset(&skipstr[0], 0, 64);
-        					strncpy(&skipstr[0], mxmlElementGetAttr(skipElem, "start"), 32);
+						mxml_index_t* skipiterator = mxmlIndexNew(gameElem, "skip", NULL);
+						mxml_node_t* skipElem = NULL;
 
-        					SkipStart[NumSkips] = strtoull(skipstr, NULL, 16);
+						print_gecko("Item Pointer OK\r\n");
+						// iterate over all the <game> entries
+						while ((skipElem = mxmlIndexEnum(skipiterator)) != NULL) {
+							if (NumSkips >= MAX_SKIPS) {
+								DrawYesNoDialog("datel crc", "TODO: Too many skips.  Fix source code.");
+							}
+							char skipstr[64];
 
-        					memset(&skipstr[0], 0, 64);
-        					strncpy(&skipstr[0], mxmlElementGetAttr(skipElem, "stop"), 32);
+							memset(&skipstr[0], 0, 64);
+							strncpy(&skipstr[0], mxmlElementGetAttr(skipElem, "start"), 32);
+							SkipStart[NumSkips] = strtoull(skipstr, NULL, 16);
 
-        					SkipStop[NumSkips] = strtoull(skipstr, NULL, 16);
-        					NumSkips++;
-        				}
+							memset(&skipstr[0], 0, 64);
+							strncpy(&skipstr[0], mxmlElementGetAttr(skipElem, "stop"), 32);
+							SkipStop[NumSkips] = strtoull(skipstr, NULL, 16);
+
+							NumSkips++;
+						}
 						return 1;
 					}
 				}
 			}
 		}
 	}
+	print_gecko("Not Found\r\n");
+    
 	return 0;
 }
 
@@ -281,7 +282,7 @@ void datel_addSkip(uint64_t start, u32 length) {
 	}
 }
 
-void dump_skips(char *mountPath, u32 crc100000) {
+void dump_skips(char* mountPath, u32 crc100000) {
 	sprintf(txtbuffer, "%s%s.skp", mountPath, get_game_name());
 	//sprintf(txtbuffer, "%sdatel_%08x.skp", mountPath, crc100000);
 	FILE* fp = fopen(txtbuffer, "wb");
@@ -291,9 +292,13 @@ void dump_skips(char *mountPath, u32 crc100000) {
 
 		sprintf(SkipsInfo, "\t\t<skipcrc crc100000=\"%08X\" skipfill=\"%02X\"/>\n", crc100000, SkipFill);
 		fwrite(SkipsInfo, 1, strlen(&SkipsInfo[0]), fp);
+	    
+		print_gecko("[dump_skips]\r\n%s\r\n", SkipsInfo);
+	    
 		for (sk = 0; sk < NumSkips; sk++) {
 			sprintf(SkipsInfo, "\t\t<skip start=\"%08X\" stop=\"%08X\"/>\n", (u32)(SkipStart[sk] & 0xFFFFFFFF), (u32)(SkipStop[sk] & 0xFFFFFFFF));
 			fwrite(SkipsInfo, 1, strlen(&SkipsInfo[0]), fp);
+		    print_gecko("%s\r\n", SkipsInfo);
 		}
 		fclose(fp);
 	}
