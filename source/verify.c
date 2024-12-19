@@ -34,40 +34,40 @@
 #include "http.h"
 #include "main.h"
 
-// Pointers to the two files
-static char *ngcDAT = NULL;
+ // Pointers to the two files
+static char* ngcDAT = NULL;
 #ifdef HW_RVL
-static char *wiiDAT = NULL;
+static char* wiiDAT = NULL;
 int net_initialized = 0;
 static int dontAskAgain = 0;
 #endif
 static int verify_initialized = 0;
 
 // XML stuff
-static mxml_node_t *ngcXML = NULL;
+static mxml_node_t* ngcXML = NULL;
 #ifdef HW_RVL
-static mxml_node_t *wiiXML = NULL;
+static mxml_node_t* wiiXML = NULL;
 #endif
 static char gameName[256];
 
-void verify_init(char *mountPath) {
+void verify_init(char* mountPath) {
 	print_gecko("[verify_init()]\r\n");
 
 	if (verify_initialized) {
 		return;
 	}
-	
-	if(ngcDAT) {
-		if(ngcXML) {
+
+	if (ngcDAT) {
+		if (ngcXML) {
 			mxmlDelete(ngcXML);
 			free(ngcXML);
 		}
 		free(ngcDAT);
 	}
 #ifdef HW_RVL
-	if(wiiDAT) {
+	if (wiiDAT) {
 		free(wiiDAT);
-		if(wiiXML) {
+		if (wiiXML) {
 			mxmlDelete(wiiXML);
 			free(wiiXML);
 		}
@@ -75,7 +75,7 @@ void verify_init(char *mountPath) {
 #endif
 
 	mxmlSetErrorCallback((mxml_error_cb_t)print_gecko);
-	FILE *fp = NULL;
+	FILE* fp = NULL;
 	// Check for the Gamecube Redump.org DAT and read it
 	sprintf(txtbuffer, "%sgc.dat", mountPath);
 	print_gecko("Open gc.dat [%s]\r\n", txtbuffer);
@@ -86,10 +86,10 @@ void verify_init(char *mountPath) {
 		int size = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
 		if (size > 0) {
-			ngcDAT = (char*) memalign(32, size);
+			ngcDAT = (char*)memalign(32, size);
 			if (ngcDAT) {
 				fread(ngcDAT, 1, size, fp);
-			}		
+			}
 		}
 		fclose(fp);
 		fp = NULL;
@@ -110,79 +110,79 @@ void verify_init(char *mountPath) {
 		int size = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
 		if (size > 0) {
-			wiiDAT = (char*) memalign(32, size);
+			wiiDAT = (char*)memalign(32, size);
 			if (wiiDAT) {
 				fread(wiiDAT, 1, size, fp);
 			}
-		}	
+		}
 		fclose(fp);
 		fp = NULL;
 	}
-	
+
 	if (wiiDAT) {
 		wiiXML = mxmlLoadString(NULL, wiiDAT, MXML_OPAQUE_CALLBACK);
 	}
 #endif // #ifdef HW_RVL
 
 #ifdef HW_RVL
-	print_gecko("DAT Files [NGC: %s] [Wii: %s]\r\n", ngcDAT ? "YES":"NO", wiiDAT ? "YES":"NO");
-	verify_initialized = ((ngcDAT&&ngcXML) && (wiiDAT&&wiiXML));
+	print_gecko("DAT Files [NGC: %s] [Wii: %s]\r\n", ngcDAT ? "YES" : "NO", wiiDAT ? "YES" : "NO");
+	verify_initialized = ((ngcDAT && ngcXML) && (wiiDAT && wiiXML));
 #else
-	print_gecko("DAT Files [NGC: %s]\r\n", ngcDAT ? "YES":"NO");
-	verify_initialized = (ngcDAT&&ngcXML);
+	print_gecko("DAT Files [NGC: %s]\r\n", ngcDAT ? "YES" : "NO");
+	verify_initialized = (ngcDAT && ngcXML);
 #endif
 }
 
 #ifdef HW_RVL
 // If there was some new files obtained, return 1, else 0
-void verify_download(char *mountPath) {
-	if(dontAskAgain) {
+void verify_download(char* mountPath) {
+	if (dontAskAgain) {
 		return;
 	}
-	
+
 	int res = 0;
 	// Ask the user if they want to update from the web
-	if(verify_initialized) {
-		char *line1 = "redump.org DAT files found";
-		char *line2 = "Check for updated DAT files?";
+	if (verify_initialized) {
+		char* line1 = "redump.org DAT files found";
+		char* line2 = "Check for updated DAT files?";
 		res = DrawYesNoDialog(line1, line2);
 	}
 	else {
-		char *line1 = "redump.org DAT files not found";
-		char *line2 = "Download them now?";
+		char* line1 = "redump.org DAT files not found";
+		char* line2 = "Download them now?";
 		res = DrawYesNoDialog(line1, line2);
 	}
-	
+
 	// If yes, lets download an update
-	if(res) {
+	if (res) {
 		// Initialize the network
-		if(!net_initialized) {
+		if (!net_initialized) {
 			char ip[16];
 			DrawMessageBox(D_INFO, "Checking for DAT updates\n \nInitializing Network...");
 			res = if_config(ip, NULL, NULL, true);
-      		if(res >= 0) {
-	      		sprintf(txtbuffer, "Checking for DAT updates\nNetwork Initialized!\nIP: %s", ip);
-	      		DrawMessageBox(D_INFO, txtbuffer);
+			if (res >= 0) {
+				sprintf(txtbuffer, "Checking for DAT updates\nNetwork Initialized!\nIP: %s", ip);
+				DrawMessageBox(D_INFO, txtbuffer);
 				net_initialized = 1;
 				print_gecko("Network Initialized!\r\n");
 			}
-      		else {
-	      		DrawMessageBox(D_FAIL, "Checking for DAT updates\nNetwork failed to Initialize!");
-	      		sleep(5);
-        		net_initialized = 0;
+			else {
+				DrawMessageBox(D_FAIL, "Checking for DAT updates\nNetwork failed to Initialize!");
+				sleep(5);
+				net_initialized = 0;
 				print_gecko("Network Failed to Initialize!\r\n");
-        		return;
-      		}
-  		}
+				return;
+			}
+		}
 
-  		// Download the GC DAT
+		// Download the GC DAT
 		char datFilePath[64];
-  		sprintf(datFilePath, "%sgc.dat",mountPath);
-  		u8 *xmlFile = (u8*)memalign(32, 3*1024*1024);
-		if((res = http_request("www.gc-forever.com","/datfile/gc.dat", xmlFile, (3*1024*1024), 0, 0)) > 0) {
+		sprintf(datFilePath, "%sgc.dat", mountPath);
+		u8* xmlFile = (u8*)memalign(32, 3 * 1024 * 1024);
+		if ((res = http_request("www.gc-forever.com", "/datfile/gc.dat", xmlFile, (3 * 1024 * 1024), 0, 0)) > 0) {
 			remove(datFilePath);
-			FILE *fp = fopen(datFilePath, "wb");
-			if(fp) {
+			FILE* fp = fopen(datFilePath, "wb");
+			if (fp) {
 				DrawMessageBox(D_INFO, "Checking for updates\nSaving GC DAT...");
 				fwrite(xmlFile, 1, res, fp);
 				fclose(fp);
@@ -202,21 +202,21 @@ void verify_download(char *mountPath) {
 		}
 
 		// Download the Wii DAT
-  		sprintf(datFilePath, "%swii.dat",mountPath);
-		if((res = http_request("www.gc-forever.com","/datfile/wii.dat", xmlFile, (3*1024*1024), 0, 0)) > 0) {
+		sprintf(datFilePath, "%swii.dat", mountPath);
+		if ((res = http_request("www.gc-forever.com", "/datfile/wii.dat", xmlFile, (3 * 1024 * 1024), 0, 0)) > 0) {
 			remove(datFilePath);
-			FILE *fp = fopen(datFilePath, "wb");
-			if(fp) {
+			FILE* fp = fopen(datFilePath, "wb");
+			if (fp) {
 				DrawMessageBox(D_INFO, "Checking for updates\nSaving Wii DAT...");
 				fwrite(xmlFile, 1, res, fp);
 				fclose(fp);
 				verify_initialized = 0;
 				print_gecko("Saved Wii DAT! %i Bytes\r\n", res);
-			}	
+			}
 			else {
 				DrawMessageBox(D_FAIL, "Checking for updates\nFailed to save Wii DAT...");
 				sleep(5);
-			}					
+			}
 		}
 		else {
 			sprintf(txtbuffer, "Error: %i", res);
@@ -233,14 +233,15 @@ void verify_download(char *mountPath) {
 }
 #endif
 
-int verify_findMD5Sum(const char * md5orig, int disc_type) {
+int verify_findMD5Sum(const char* md5orig, int disc_type) {
 
 	print_gecko("[verify_findMD5Sum]\r\nLooking for MD5 [%s]\r\n", md5orig);
 
 #ifdef HW_RVL
-	mxml_node_t *pointer = (disc_type == IS_NGC_DISC)  ? ngcXML : wiiXML;
+	mxml_node_t* pointer = (disc_type == IS_NGC_DISC) ? ngcXML
+		: (disc_type == IS_WII_DISC) ? wiiXML : NULL;
 #else
-	mxml_node_t *pointer = (disc_type == IS_NGC_DISC)  ? ngcXML : NULL;
+	mxml_node_t* pointer = (disc_type == IS_NGC_DISC) ? ngcXML : NULL;
 #endif
 	if (!pointer)
 		return 0;
@@ -248,23 +249,23 @@ int verify_findMD5Sum(const char * md5orig, int disc_type) {
 	print_gecko("Looking in the %s XML\r\n", pointer == ngcXML ? "GameCube" : "Wii");
 
 	// open the <datafile>
-	mxml_node_t *item = mxmlFindElement(pointer, pointer, "datafile", NULL, NULL, MXML_DESCEND);
+	mxml_node_t* item = mxmlFindElement(pointer, pointer, "datafile", NULL, NULL, MXML_DESCEND);
 	if (!item) {
 		print_gecko("Not Found\r\n");
 		return 0;
 	}
-	
+
 	print_gecko("DataFile Pointer OK\r\n");
 
 	// look for md5 in xml directly
-	mxml_node_t *md5Elem = mxmlFindElement(item, pointer, NULL, "md5", md5orig, MXML_DESCEND);
+	mxml_node_t* md5Elem = mxmlFindElement(item, pointer, NULL, "md5", md5orig, MXML_DESCEND);
 	if (!md5Elem) {
 		print_gecko("Not Found\r\n");
 		return 0; // We didnt find the md5 in the data file
 	}
 
 	// we found our md5 in the dat file, look up info about parent node
-	mxml_node_t *gameElem = mxmlGetParent(md5Elem);
+	mxml_node_t* gameElem = mxmlGetParent(md5Elem);
 	if (!gameElem) {
 		print_gecko("Not Found\r\n");
 		return 0;
@@ -276,7 +277,7 @@ int verify_findMD5Sum(const char * md5orig, int disc_type) {
 	return 1;
 }
 
-char *verify_get_name(int flag) {
+char* verify_get_name(int flag) {
 	if (flag != 0) {
 		if (strlen(&gameName[0]) > 32) {
 			gameName[30] = '.';
@@ -289,7 +290,8 @@ char *verify_get_name(int flag) {
 
 int verify_is_available(int disc_type) {
 #ifdef HW_RVL
-	return (disc_type == IS_NGC_DISC) ? (ngcDAT != NULL) : (wiiDAT != NULL);
+	return (disc_type == IS_NGC_DISC) ? (ngcDAT != NULL)
+		: (disc_type == IS_WII_DISC) ? (wiiDAT != NULL) : 0;
 #else
 	return (disc_type == IS_NGC_DISC) ? (ngcDAT != NULL) : 0;
 #endif
