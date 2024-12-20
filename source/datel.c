@@ -38,7 +38,7 @@
  // Pointers to the file
 static char* datelDAT = NULL;
 static int datel_initialized = 0;
-static int SkipFill = 0;
+static int SkipFill = 0x55;
 static int NumSkips = 0;
 #define MAX_SKIPS (0x580)
 static uint64_t SkipStart[MAX_SKIPS];
