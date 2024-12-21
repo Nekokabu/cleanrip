@@ -173,7 +173,7 @@ void datel_download(char* mountPath) {
 int datel_findCrcSum(int crcorig) {
 
 	NumSkips = 0;
-	print_gecko("[datel_findCrcSum()]\r\nLooking for CRC [%x]\r\n", crcorig);
+	print_gecko("[datel_findCrcSum()]\r\nLooking for CRC in the Datel XML [%x]\r\n", crcorig);
 	char* xmlPointer = datelDAT;
 
 	if (xmlPointer) {
@@ -181,12 +181,12 @@ int datel_findCrcSum(int crcorig) {
 
 		//pointer = mxmlLoadString(NULL, xmlPointer, MXML_TEXT_CALLBACK);
 
-		print_gecko("Looking in the Datel XML\r\n");
+		//print_gecko("Looking in the Datel XML\r\n");
 		if (pointer) {
 			// open the <datafile>
 			mxml_node_t* item = mxmlFindElement(pointer, pointer, "datafile", NULL, NULL, MXML_DESCEND);
 			if (item) {
-				print_gecko("DataFile Pointer OK\r\n");
+				//print_gecko("DataFile Pointer OK\r\n");
 				mxml_index_t* iterator = mxmlIndexNew(item, "game", NULL);
 				mxml_node_t* gameElem = NULL;
 
@@ -206,20 +206,20 @@ int datel_findCrcSum(int crcorig) {
 					int crcval = strtoul(crc, NULL, 16);
 					//if (!strncmp(crc, "default", 7))
 					//	crcval = crcorig;
-
-					memset(&crc[0], 0, 64);
-					strncpy(&crc[0], mxmlElementGetAttr(fillElem, "skipfill"), 32);
-
-					SkipFill = strtoul(crc, NULL, 16);
 					//print_gecko("Comparing game [%x] and crc [%x]\r\n", mxmlElementGetAttr(nameElem, "name"), mxmlElementGetAttr(crcElem, "crc100000"));
 					if (crcval == crcorig) {
 						snprintf(&gameName[0], 128, "%s", mxmlElementGetAttr(nameElem, "name"));
 						print_gecko("Found a match! [%s]\r\n", gameName);
 
+						memset(&crc[0], 0, 64);
+						strncpy(&crc[0], mxmlElementGetAttr(fillElem, "skipfill"), 32);
+						SkipFill = strtoul(crc, NULL, 16);
+						print_gecko("SkipFill = 0x%.2X\r\n", SkipFill);
+						
 						mxml_index_t* skipiterator = mxmlIndexNew(gameElem, "skip", NULL);
 						mxml_node_t* skipElem = NULL;
 
-						print_gecko("Item Pointer OK\r\n");
+						//print_gecko("Item Pointer OK\r\n");
 						// iterate over all the <game> entries
 						while ((skipElem = mxmlIndexEnum(skipiterator)) != NULL) {
 							if (NumSkips >= MAX_SKIPS) {
@@ -235,6 +235,7 @@ int datel_findCrcSum(int crcorig) {
 							strncpy(&skipstr[0], mxmlElementGetAttr(skipElem, "stop"), 32);
 							SkipStop[NumSkips] = strtoull(skipstr, NULL, 16);
 
+							print_gecko("Skip %.8X-%.8X\r\n", (u32)(SkipStart[NumSkips] & 0xFFFFFFFF), (u32)(SkipStop[NumSkips] & 0xFFFFFFFF));
 							NumSkips++;
 						}
 						return 1;
@@ -284,7 +285,7 @@ void datel_addSkip(uint64_t start, u32 length) {
 
 void dump_skips(char* mountPath, u32 crc100000) {
 	sprintf(txtbuffer, "%s%s.skp", mountPath, get_game_name());
-	//sprintf(txtbuffer, "%sdatel_%08x.skp", mountPath, crc100000);
+	
 	FILE* fp = fopen(txtbuffer, "wb");
 	if (fp) {
 		int sk = 0;
