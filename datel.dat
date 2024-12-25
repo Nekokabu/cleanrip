@@ -199,6 +199,75 @@
 		<skip start="01F00000" stop="4FFFFFFF"/>
 		<skip start="50300000" stop="570FFFFF"/>
 	</game>
+	<game name="Datel FreeLoader for Nintendo Wii (Japan)">
+		<category>Applications</category>
+		<description>Datel FreeLoader for Nintendo Wii (Japan)</description>
+		<rom name="Datel FreeLoader for Nintendo Wii (Japan).iso" size="1459978240" crc="142a171b" md5="ea2ae0e02415d2034b18bdb44825ee1e" sha1="8a5890f955acbec551c9115c111cd0697aa2ad98"/>
+		<skipcrc crc100000="AEFC7E98" skipfill="55"/>
+		<skip start="00840000" stop="0084FFFF"/>
+		<skip start="008A0000" stop="008AFFFF"/>
+		<skip start="009D0000" stop="009DFFFF"/>
+		<skip start="01580000" stop="0159FFFF"/>
+		<skip start="016D0000" stop="0170FFFF"/>
+		<skip start="01750000" stop="0176FFFF"/>
+		<skip start="017A0000" stop="017BFFFF"/>
+		<skip start="01E90000" stop="01E9FFFF"/>
+		<skip start="02120000" stop="0212FFFF"/>
+		<skip start="02630000" stop="0266FFFF"/>
+		<skip start="0D0C0000" stop="0D19FFFF"/>
+		<skip start="1A990000" stop="1AA6FFFF"/>
+		<skip start="28260000" stop="2834FFFF"/>
+		<skip start="35B40000" stop="35C1FFFF"/>
+		<skip start="43410000" stop="434FFFFF"/>
+		<skip start="50CE0000" stop="50DCFFFF"/>
+		<skip start="52B80000" stop="570FFFFF"/>
+	</game>
+	<game name="Datel FreeLoader for Nintendo Wii (Europe)">
+		<category>Applications</category>
+		<description>Datel FreeLoader for Nintendo Wii (Europe)</description>
+		<rom name="Datel FreeLoader for Nintendo Wii (Europe).iso" size="1459978240" crc="70A3DB9E" md5="4c770b3892c54b37ee8d039bf869a182" sha1="2d7b723305cec24413c8d1c3adc7c90fdada9c01"/>
+		<skipcrc crc100000="77AF2048" skipfill="55"/>
+		<skip start="00840000" stop="0084FFFF"/>
+		<skip start="008A0000" stop="008AFFFF"/>
+		<skip start="009D0000" stop="009DFFFF"/>
+		<skip start="01580000" stop="0159FFFF"/>
+		<skip start="016D0000" stop="0170FFFF"/>
+		<skip start="01750000" stop="0176FFFF"/>
+		<skip start="017A0000" stop="017BFFFF"/>
+		<skip start="01E90000" stop="01E9FFFF"/>
+		<skip start="02120000" stop="0212FFFF"/>
+		<skip start="02630000" stop="0266FFFF"/>
+		<skip start="0D0C0000" stop="0D19FFFF"/>
+		<skip start="1A990000" stop="1AA6FFFF"/>
+		<skip start="28260000" stop="2834FFFF"/>
+		<skip start="35B40000" stop="35C1FFFF"/>
+		<skip start="43410000" stop="434FFFFF"/>
+		<skip start="50CE0000" stop="50DCFFFF"/>
+		<skip start="52B80000" stop="570FFFFF"/>
+	</game>
+	<game name="Datel FreeLoader for Nintendo Wii (USA)">
+		<category>Applications</category>
+		<description>Datel FreeLoader for Nintendo Wii (USA)</description>
+		<rom name="Datel FreeLoader for Nintendo Wii (USA).iso" size="1459978240" crc="F4123A42" md5="b12d8d5a16da7e8193539902164343eb" sha1="1d77b124c449a174d1f6769ea6ab746e5acc58f4"/>
+		<skipcrc crc100000="9E6E6CB1" skipfill="55"/>
+		<skip start="00840000" stop="0084FFFF"/>
+		<skip start="008A0000" stop="008AFFFF"/>
+		<skip start="009D0000" stop="009DFFFF"/>
+		<skip start="01580000" stop="0159FFFF"/>
+		<skip start="016D0000" stop="0170FFFF"/>
+		<skip start="01750000" stop="0176FFFF"/>
+		<skip start="017A0000" stop="017BFFFF"/>
+		<skip start="01E90000" stop="01E9FFFF"/>
+		<skip start="02120000" stop="0212FFFF"/>
+		<skip start="02630000" stop="0266FFFF"/>
+		<skip start="0D0C0000" stop="0D19FFFF"/>
+		<skip start="1A990000" stop="1AA6FFFF"/>
+		<skip start="28260000" stop="2834FFFF"/>
+		<skip start="35B40000" stop="35C1FFFF"/>
+		<skip start="43410000" stop="434FFFFF"/>
+		<skip start="50CE0000" stop="50DCFFFF"/>
+		<skip start="52B80000" stop="570FFFFF"/>
+	</game>
 	<game name="Unknown Datel default">
 		<category>Applications</category>
 		<description>Unknown Datel default</description>
