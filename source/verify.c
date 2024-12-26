@@ -235,7 +235,6 @@ void verify_download(char* mountPath) {
 
 int verify_findMD5Sum(const char* md5orig, int disc_type) {
 
-	print_gecko("[verify_findMD5Sum]\r\nLooking for MD5 [%s]\r\n", md5orig);
 
 #ifdef HW_RVL
 	mxml_node_t* pointer = (disc_type == IS_NGC_DISC) ? ngcXML
@@ -246,7 +245,7 @@ int verify_findMD5Sum(const char* md5orig, int disc_type) {
 	if (!pointer)
 		return 0;
 
-	print_gecko("Looking in the %s XML\r\n", pointer == ngcXML ? "GameCube" : "Wii");
+	print_gecko("[verify_findMD5Sum]\r\nLooking for MD5 in the %s XML [%s]\r\n", pointer == ngcXML ? "GameCube" : "Wii" , md5orig);
 
 	// open the <datafile>
 	mxml_node_t* item = mxmlFindElement(pointer, pointer, "datafile", NULL, NULL, MXML_DESCEND);
@@ -255,7 +254,7 @@ int verify_findMD5Sum(const char* md5orig, int disc_type) {
 		return 0;
 	}
 
-	print_gecko("DataFile Pointer OK\r\n");
+	//print_gecko("DataFile Pointer OK\r\n");
 
 	// look for md5 in xml directly
 	mxml_node_t* md5Elem = mxmlFindElement(item, pointer, NULL, "md5", md5orig, MXML_DESCEND);
