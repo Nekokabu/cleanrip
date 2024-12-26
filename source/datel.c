@@ -271,13 +271,16 @@ void datel_adjustStartStop(uint64_t* start, u32* length, u32* fill) {
 
 void datel_addSkip(uint64_t start, u32 length) {
 	if ((NumSkips > 0) && (start == SkipStop[NumSkips - 1] + 1)) {
+		//print_gecko("\t%08X+%08X\r\n", (u32)(SkipStop[NumSkips - 1] & 0xFFFFFFFF), length);
 		SkipStop[NumSkips - 1] += length;
 	}
 	else {
 		SkipStart[NumSkips] = start;
 		SkipStop[NumSkips] = start + length - 1;
+		//print_gecko("[%08X-%08X]\r\n", (u32)(SkipStart[NumSkips] & 0xFFFFFFFF), (u32)(SkipStop[NumSkips] & 0xFFFFFFFF));
 		NumSkips++;
 		if (NumSkips == MAX_SKIPS) {
+			print_gecko("NumSkips == MAX_SKIPS\r\n");
 			NumSkips = 0;
 		}
 	}
