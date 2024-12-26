@@ -1266,6 +1266,7 @@ int dump_game(int disc_type, int type, int fs) {
 						((char*)wmsg->data)[i] = 0x55;
 					}
 					ret = 0;
+					datel_addSkip(((u64)startLBA << 11) & 0xFFFFF000, wmsg->length);
 				}
 			}
 			else {
@@ -1355,6 +1356,7 @@ int dump_game(int disc_type, int type, int fs) {
 					((char*)wmsg->data)[i] = 0x55;
 				}
 				ret = 0;
+				//datel_addSkip(((u64)startLBA << 11) & 0xFFFFF000, wmsg->length);
 			}
 
 			MQ_Send(msgq, (mqmsg_t)wmsg, MQ_MSG_BLOCK);
@@ -1385,8 +1387,16 @@ int dump_game(int disc_type, int type, int fs) {
 		DrawFrameStart();
 		DrawEmptyBox(30, 180, vmode->fbWidth - 38, 350, COLOR_BLACK);
 		sprintf(txtbuffer, "%s", dvd_error_str());
+		print_gecko("Error: %s\r\n",txtbuffer);
+		print_gecko("startLBA: %llx\r\n",(u64)startLBA << 11);
+		print_gecko("ret: %d\r\n",ret);
+		
 		WriteCentre(255, txtbuffer);
 		WriteCentre(315, "Press  A  to continue");
+		if ((disc_type == IS_DATEL_DISC)) {
+			//if (!forceReadMode)
+			dump_skips(&mountPath[0], crc100000);
+		}
 		dvd_motor_off();
 		wait_press_A();
 		return 0;
@@ -1399,6 +1409,10 @@ int dump_game(int disc_type, int type, int fs) {
 		sprintf(txtbuffer, "Copy Cancelled");
 		WriteCentre(255, txtbuffer);
 		WriteCentre(315, "Press  A  to continue");
+		if ((disc_type == IS_DATEL_DISC)) {
+			//if (!forceReadMode) 
+				dump_skips(&mountPath[0], crc100000);
+		}
 		dvd_motor_off();
 		wait_press_A();
 		return 0;
@@ -1415,7 +1429,8 @@ int dump_game(int disc_type, int type, int fs) {
 		char tempstr[32];
 
 		if ((disc_type == IS_DATEL_DISC)) {
-			if (!forceReadMode) dump_skips(&mountPath[0], crc100000);
+			//if (!forceReadMode)
+				dump_skips(&mountPath[0], crc100000);
 		}
 		if (calcChecksums) {
 			char md5sum[64];
@@ -1480,7 +1495,8 @@ int dump_game(int disc_type, int type, int fs) {
 			renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".bca");
 			renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".iso");
 			renameFile(&mountPath[0], &gameName[0], &tempstr[0], "-dumpinfo.txt");
-			if (!forceReadMode) renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".skp");
+			//if (!forceReadMode)
+				renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".skp");
 		}
 
 		WriteCentre(315, "Press  A to continue  B to exit");
