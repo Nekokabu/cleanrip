@@ -1388,13 +1388,10 @@ int dump_game(int disc_type, int type, int fs) {
 		DrawEmptyBox(30, 180, vmode->fbWidth - 38, 350, COLOR_BLACK);
 		sprintf(txtbuffer, "%s", dvd_error_str());
 		print_gecko("Error: %s\r\n",txtbuffer);
-		print_gecko("startLBA: %llx\r\n",(u64)startLBA << 11);
-		print_gecko("ret: %d\r\n",ret);
 		
 		WriteCentre(255, txtbuffer);
 		WriteCentre(315, "Press  A  to continue");
 		if ((disc_type == IS_DATEL_DISC)) {
-			//if (!forceReadMode)
 			dump_skips(&mountPath[0], crc100000);
 		}
 		dvd_motor_off();
@@ -1402,15 +1399,13 @@ int dump_game(int disc_type, int type, int fs) {
 		return 0;
 	}
 	else if (ret == -61) {
-		print_gecko("Copy Cancelled\r\n");
-
 		DrawFrameStart();
 		DrawEmptyBox(30, 180, vmode->fbWidth - 38, 350, COLOR_BLACK);
 		sprintf(txtbuffer, "Copy Cancelled");
+		print_gecko("%s\r\n",txtbuffer);
 		WriteCentre(255, txtbuffer);
 		WriteCentre(315, "Press  A  to continue");
 		if ((disc_type == IS_DATEL_DISC)) {
-			//if (!forceReadMode) 
 				dump_skips(&mountPath[0], crc100000);
 		}
 		dvd_motor_off();
@@ -1429,7 +1424,6 @@ int dump_game(int disc_type, int type, int fs) {
 		char tempstr[32];
 
 		if ((disc_type == IS_DATEL_DISC)) {
-			//if (!forceReadMode)
 				dump_skips(&mountPath[0], crc100000);
 		}
 		if (calcChecksums) {
@@ -1457,7 +1451,9 @@ int dump_game(int disc_type, int type, int fs) {
 				else {
 					renameFile(&mountPath[0], &gameName[0], verify_get_name(0), ".iso");
 				}
+#ifdef HW_RVL
 				renameFile(&mountPath[0], &gameName[0], verify_get_name(0), ".bca");
+#endif
 
 				name = verify_get_name(0);
 			}
@@ -1465,9 +1461,10 @@ int dump_game(int disc_type, int type, int fs) {
 				verified = datel_findMD5Sum(&md5sum[0]);
 				if (verified) {
 					renameFile(&mountPath[0], &gameName[0], datel_get_name(0), ".iso");
+					renameFile(&mountPath[0], &gameName[0], datel_get_name(0), ".skp");
+#ifdef HW_RVL
 					renameFile(&mountPath[0], &gameName[0], datel_get_name(0), ".bca");
-					if (!forceReadMode) renameFile(&mountPath[0], &gameName[0], datel_get_name(0), ".skp");
-
+#endif
 					name = datel_get_name(0);
 				}
 			}
@@ -1492,11 +1489,12 @@ int dump_game(int disc_type, int type, int fs) {
 		if ((disc_type == IS_DATEL_DISC) && !(verified)) {
 			//Rename
 			sprintf(tempstr, "datel_%08x", crc100000);
-			renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".bca");
 			renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".iso");
 			renameFile(&mountPath[0], &gameName[0], &tempstr[0], "-dumpinfo.txt");
-			//if (!forceReadMode)
-				renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".skp");
+			renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".skp");
+#ifdef HW_RVL
+			renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".bca");
+#endif
 		}
 
 		WriteCentre(315, "Press  A to continue  B to exit");
