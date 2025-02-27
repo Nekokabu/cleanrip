@@ -145,6 +145,22 @@
 		<skip start="01F00000" stop="4FFFFFFF"/>
 		<skip start="50300000" stop="570FFFFF"/>
 	</game>
+	<game name="Karat Pro Action Replay (v1.20)">
+		<category>Applications</category>
+		<description>Karat Pro Action Replay (v1.20)</description>
+		<rom name="Karat Pro Action Replay (v1.20).iso" size="1459978240" crc="a6537fde" md5="429245003cc92598a6958f41f3fc7b96" sha1="f697e49fe40c49f74af82ed4ffa7a6eb2e986e3f"/>
+		<skipcrc crc100000="5F45FE55" skipfill="55"/>
+		<skip start="01F00000" stop="4FFFFFFF"/>
+		<skip start="50300000" stop="570FFFFF"/>
+	</game>
+	<game name="Karat Pro Action Replay (v1.20A)">
+		<category>Applications</category>
+		<description>Karat Pro Action Replay (v1.20A)</description>
+		<rom name="Karat Pro Action Replay (v1.20A).iso" size="1459978240" crc="f44d8921" md5="09ea5e56a98920c4db69dd5628f1fa8a" sha1="0a19a08b62874058827c0084330571d03eecb6be"/>
+		<skipcrc crc100000="101F932A" skipfill="55"/>
+		<skip start="01F00000" stop="4FFFFFFF"/>
+		<skip start="50300000" stop="570FFFFF"/>
+	</game>
 	<game name="Karat Sokukouryaku">
 		<category>Applications</category>
 		<description>Karat Sokukouryaku</description>
