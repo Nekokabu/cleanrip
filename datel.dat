@@ -137,6 +137,14 @@
 		<skip start="01F00000" stop="4FFFFFFF"/>
 		<skip start="50200000" stop="570FFFFF"/>
 	</game>
+	<game name="Karat Pro Action Replay (v1.0b)">
+		<category>Applications</category>
+		<description>Karat Pro Action Replay (v1.0b)</description>
+		<rom name="Karat Pro Action Replay (v1.0b).iso" size="1459978240" crc="11b6a9ec" md5="372d0fe430d3e4db5b0aa1a9a7cfc348" sha1="9e406b3c0ca57dbe0c3aed241f161ce7eb7a55de"/>
+		<skipcrc crc100000="3E4F9301" skipfill="55"/>
+		<skip start="01F00000" stop="4FFFFFFF"/>
+		<skip start="50300000" stop="57057FFF"/>
+	</game>
 	<game name="Karat Pro Action Replay (v1.1)">
 		<category>Applications</category>
 		<description>Karat Pro Action Replay (v1.1)</description>
