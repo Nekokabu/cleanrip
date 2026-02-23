@@ -1412,9 +1412,7 @@ int dump_game(int disc_type, int fs) {
 			else {
 				renameFile(&mountPath[0], &gameName[0], verify_get_name(0), ".iso");
 			}
-#ifdef HW_RVL
 			renameFile(&mountPath[0], &gameName[0], verify_get_name(0), ".bca");
-#endif
 
 			name = verify_get_name(0);
 		}
@@ -1423,9 +1421,8 @@ int dump_game(int disc_type, int fs) {
 			if (verified) {
 				renameFile(&mountPath[0], &gameName[0], datel_get_name(0), ".iso");
 				renameFile(&mountPath[0], &gameName[0], datel_get_name(0), ".skp");
-#ifdef HW_RVL
 				renameFile(&mountPath[0], &gameName[0], datel_get_name(0), ".bca");
-#endif
+
 				name = datel_get_name(0);
 			}
 		}
@@ -1459,9 +1456,7 @@ int dump_game(int disc_type, int fs) {
 			renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".iso");
 			renameFile(&mountPath[0], &gameName[0], &tempstr[0], "-dumpinfo.txt");
 			renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".skp");
-#ifdef HW_RVL
 			renameFile(&mountPath[0], &gameName[0], &tempstr[0], ".bca");
-#endif
 		}
 		dvd_motor_off(1);
 		wait_press_A_exit_B(false);
