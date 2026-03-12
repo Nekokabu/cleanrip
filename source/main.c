@@ -79,8 +79,10 @@ enum {
 #endif
 
 static int selected_device = 0;
+static int selected_device_for_logs = 0;
 static int calcChecksums = 0;
 static int dumpCounter = 0;
+static int ignoreReadErrors = 0;
 static char gameName[32];
 static char internalName[512];
 static char mountPath[512];
@@ -528,13 +530,13 @@ DISC_INTERFACE* get_sd_card_handler(int slot) {
 }
 #endif
 
-/* Initialise the device */
-static int initialise_device(int fs) {
+/* Initialise the device (for dumping / for logs)*/
+static int initialise_device(int fs, int* select_ptr) {
 	int ret = 0;
 
 	DrawFrameStart();
 	DrawEmptyBox(30, 180, vmode->fbWidth - 38, 350, COLOR_BLACK);
-	if (selected_device == TYPE_SD) {
+	if (*select_ptr == TYPE_SD) {
 #ifdef HW_DOL
 		sdcard_slot = select_sd_gecko_slot();
 		sdcard = get_sd_card_handler(sdcard_slot);
@@ -545,18 +547,18 @@ static int initialise_device(int fs) {
 		WriteCentre(255, "Insert a SD FAT/NTFS formatted device");
 	}
 #ifdef HW_DOL
-	else if (selected_device == TYPE_M2LOADER) {
+	else if (*select_ptr == TYPE_M2LOADER) {
 		WriteCentre(255, "Insert a M.2 FAT/NTFS formatted device");
 	}
 #else
-	else if (selected_device == TYPE_USB) {
+	else if (*select_ptr == TYPE_USB) {
 		WriteCentre(255, "Insert a USB FAT/NTFS formatted device");
 	}
 #endif
 	wait_press_A_exit_B(false);
 
 	if (fs == TYPE_FAT) {
-		switch (selected_device) {
+		switch (*select_ptr) {
 			case TYPE_SD:
 				ret = fatMountSimple("fat", sdcard);
 				break;
@@ -581,7 +583,7 @@ static int initialise_device(int fs) {
 	}
 	else if (fs == TYPE_NTFS) {
 		int mountCount = 0;
-		switch (selected_device) {
+		switch (*select_ptr) {
 			case TYPE_SD:
 				mountCount = ntfsMountDevice(sdcard, &mounts, NTFS_DEFAULT | NTFS_RECOVER);
 				break;
@@ -715,35 +717,43 @@ int detect_duallayer_disc() {
 }
 
 /* the user must specify the device type */
-void select_device_type() {
-	selected_device = 0;
+void select_device_type(int* select_ptr, bool logDevice) {
+	*select_ptr = 0;
 	
 	while ((get_buttons_pressed() & PAD_BUTTON_A));
 	while (1) {
 		DrawFrameStart();
 		DrawEmptyBox(30, 180, vmode->fbWidth - 38, 350, COLOR_BLACK);
-		WriteCentre(255, "Please select the device type");
+		char *msg = !logDevice ? "Please select the device to write disc data to" 
+					: "Select a device for BCA/verification to use";
+		WriteFontStyled(320, 255, msg, 0.85f, true, defaultColor);
 #ifdef HW_DOL
 		DrawSelectableButton(90, 310, -1, 340, "SD Card",
-				(selected_device == TYPE_SD) ? B_SELECTED : B_NOSELECT, -1);
+				(*select_ptr == TYPE_SD) ? B_SELECTED : B_NOSELECT, -1);
 		DrawSelectableButton(225, 310, -1, 340, "M.2 Loader",
-				(selected_device == TYPE_M2LOADER) ? B_SELECTED : B_NOSELECT, -1);
-		if(selected_device == TYPE_SD) {
+				(*select_ptr == TYPE_M2LOADER) ? B_SELECTED : B_NOSELECT, -1);
+		if(*select_ptr == TYPE_SD) {
 			WriteFontStyled(320, 370, "SD Cards are supported via devices such as:", 0.65f, true, defaultColor);
 			WriteFontStyled(320, 390, "SD Gecko, SD2SP2, GC2SD, FlipperMCE / GCMCE", 0.65f, true, defaultColor);
 		}
 #endif
 #ifdef HW_RVL
 		DrawSelectableButton(100, 310, -1, 340, "USB",
-				(selected_device == TYPE_USB) ? B_SELECTED : B_NOSELECT, -1);
+				(*select_ptr == TYPE_USB) ? B_SELECTED : B_NOSELECT, -1);
 		DrawSelectableButton(210, 310, -1, 340, "Front SD",
-				(selected_device == TYPE_SD) ? B_SELECTED : B_NOSELECT, -1);
+				(*select_ptr == TYPE_SD) ? B_SELECTED : B_NOSELECT, -1);
 #endif
-		DrawSelectableButton(390, 310, -1, 340, "Read Only",
-				(selected_device == TYPE_READONLY) ? B_SELECTED : B_NOSELECT, -1);
-		if(selected_device == TYPE_READONLY) {
-			WriteFontStyled(320, 370, "Reads a disc from start to end,", 0.65f, true, defaultColor);
-			WriteFontStyled(320, 390, "and verifies it against an internal checksum list.", 0.65f, true, defaultColor);
+		DrawSelectableButton(390, 310, -1, 340, logDevice ? "None" : "Read Only",
+				(*select_ptr == TYPE_READONLY) ? B_SELECTED : B_NOSELECT, -1);
+		if(*select_ptr == TYPE_READONLY) {
+			if(!logDevice) {
+				WriteFontStyled(320, 370, "Reads a disc from start to end,", 0.65f, true, defaultColor);
+				WriteFontStyled(320, 390, "and verifies it against an internal checksum list.", 0.65f, true, defaultColor);
+			}
+		}
+		if(logDevice) {
+			WriteFontStyled(320, 370, "The selected device will be used for:", 0.65f, true, defaultColor);
+			WriteFontStyled(320, 390, "BCA/verification log writing & redump DAT sourcing.", 0.65f, true, defaultColor);
 		}
 		DrawFrameFinish();
 		while (!(get_buttons_pressed() & (PAD_BUTTON_RIGHT | PAD_BUTTON_LEFT
@@ -751,9 +761,9 @@ void select_device_type() {
 		u32 btns = get_buttons_pressed();
 
 		if (btns & PAD_BUTTON_RIGHT)
-			selected_device = selected_device == 2 ? 0 : (selected_device+1);
+			*select_ptr = *select_ptr == 2 ? 0 : (*select_ptr+1);
 		if (btns & PAD_BUTTON_LEFT)
-			selected_device = selected_device == 0 ? 2 : (selected_device-1);
+			*select_ptr = *select_ptr == 0 ? 2 : (*select_ptr-1);
 
 		if (btns & PAD_BUTTON_A)
 			break;
@@ -1032,7 +1042,7 @@ void dump_bca() {
 }
 
 void dump_info(char *md5, char *sha1, u32 crc32, int verified, u32 seconds, char* name) {
-	if(selected_device == TYPE_READONLY) {
+	if(selected_device_for_logs == TYPE_READONLY) {
 		return;
 	}
 	
@@ -1167,7 +1177,7 @@ int dump_game(int disc_type, int fs) {
 	}
 
 	// Dump the BCA for Nintendo discs
-	if(selected_device != TYPE_READONLY) {
+	if(selected_device_for_logs != TYPE_READONLY) {
 		dump_bca();
 	}
 
@@ -1261,10 +1271,14 @@ int dump_game(int disc_type, int fs) {
 		wmsg->ret_box = blockq;
 
 		// Read from Disc
-		if(disc_type == IS_DATEL_DISC)
+		if (disc_type == IS_DATEL_DISC) {
 			ret = DVD_LowRead64Datel(wmsg->data, (u32)opt_read_size, (u64)startLBA << 11, isKnownDatel);
+			if(ignoreReadErrors)
+				ret = 0;
+		}
 		else
 			ret = DVD_LowRead64(wmsg->data, (u32)opt_read_size, (u64)startLBA << 11);
+		
 		usleep(50);
 		MQ_Send(msgq, (mqmsg_t)wmsg, MQ_MSG_BLOCK);
 		if(calcChecksums) {
@@ -1497,17 +1511,29 @@ int main(int argc, char **argv) {
 	while (1) {
 		int fs = 0, ret = 0;
 		if(reuseSettings == NOT_ASKED || reuseSettings == ANSWER_NO) {
-			select_device_type();
+			select_device_type(&selected_device, false);
 			if (selected_device != TYPE_READONLY) {
 				fs = filesystem_type();
 				ret = -1;
 				do {
-					ret = initialise_device(fs);
+					ret = initialise_device(fs, &selected_device);
+					selected_device_for_logs = selected_device;
 				} while (ret != 1);
-			}			
+			}
+			else {
+				// Ask if logs should be dumped and to where.
+				select_device_type(&selected_device_for_logs, true);
+				if (selected_device_for_logs != TYPE_READONLY) {
+					fs = filesystem_type();
+					ret = -1;
+					do {
+						ret = initialise_device(fs, &selected_device_for_logs);
+					} while (ret != 1);
+				}
+			}
 		}
 
-		if(selected_device != TYPE_READONLY && calcChecksums) {
+		if(selected_device_for_logs != TYPE_READONLY && calcChecksums) {
 			// Try to load up redump.org dat files
 			verify_init(&mountPath[0]);
 #ifdef HW_RVL
@@ -1547,6 +1573,11 @@ int main(int argc, char **argv) {
 #endif
 				calcChecksums = 1;
 			}
+			if ((disc_type == IS_DATEL_DISC) && DrawYesNoDialog("Ignore disc read errors?",
+				"(Recommended for Wii Freeloader)")) {
+				ignoreReadErrors = 1;
+			}
+			else ignoreReadErrors = 0;
 		}
 		
 		if(reuseSettings == NOT_ASKED) {
